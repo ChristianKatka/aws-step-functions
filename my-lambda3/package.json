@@ -1,0 +1,26 @@
+{
+  "name": "my-lambda",
+  "version": "0.0.0",
+  "scripts": {
+    "start": "ts-node test/index.ts",
+    "prebuild": "rm -rf build && rm -rf dist && mkdir build && mkdir dist",
+    "build": "tsc -p tsconfig.json && cp package.json build && cd build && npm install --production"
+  },
+  "private": true,
+  "dependencies": {
+    "@aws-sdk/lib-dynamodb": "^3.436.0",
+    "lodash": "^4.17.21",
+    "rxjs": "^7.8.1",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "8.10.125",
+    "@types/lodash": "^4.14.200",
+    "@types/node": "^20.8.9",
+    "@types/uuid": "^9.0.6",
+    "aws-sdk": "^2.1481.0",
+    "dotenv": "^16.3.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}
