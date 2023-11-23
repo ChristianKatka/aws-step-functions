@@ -7,9 +7,13 @@ import {
   DefinitionBody,
   StateMachine,
   Map,
+  Fail,
+  Condition,
+  Choice,
 } from "aws-cdk-lib/aws-stepfunctions";
 import { LambdaInvoke } from "aws-cdk-lib/aws-stepfunctions-tasks";
 import { Construct } from "constructs";
+import { machine } from "os";
 export class StepFunctionsStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
@@ -50,6 +54,18 @@ export class StepFunctionsStack extends Stack {
       runtime: Runtime.NODEJS_18_X,
     });
 
+    const lambdaErrorHandling = new NodejsFunction(this, "LambdaError", {
+      functionName: "my-step-function-error-handling-lambda",
+      bundling: {
+        externalModules: [],
+        minify: true,
+      },
+      entry: "./my-error-lambda/src/lambda.ts",
+      handler: "handler",
+      memorySize: 512,
+      runtime: Runtime.NODEJS_18_X,
+    });
+
     const lambda1Role = lambda1.role;
     if (!lambda1Role) return;
     iamLambdaPermissions(this, lambda1Role, "lambda1policy");
@@ -65,16 +81,31 @@ export class StepFunctionsStack extends Stack {
       outputPath: "$",
     });
 
-    const map = new Map(this, "Map State", {
+    const mapState = new Map(this, "Map State", {
       itemsPath: "$.Payload.locations",
       resultPath: "$",
     });
 
-    const definition = Lambda1InvokeJob.next(
-      map.iterator(
-        new LambdaInvoke(this, "InvokeLambda2", { lambdaFunction: lambda2 })
-      )
+    const lambda2MapIteratorInvoke = mapState.iterator(
+      new LambdaInvoke(this, "InvokeLambda2", { lambdaFunction: lambda2 })
     );
+    const lambda3Invoke = new LambdaInvoke(this, "InvokeLambda3", {
+      lambdaFunction: lambda3,
+    });
+
+    const errorHandlingState = new LambdaInvoke(this, "ErrorHandlerState", {
+      lambdaFunction: lambdaErrorHandling,
+      resultPath: "$", // specify a path for the error result
+    });
+
+    const definition = Lambda1InvokeJob.next(lambda2MapIteratorInvoke).next(
+      lambda3Invoke
+    );
+
+    // Add error transitions for Lambda functions
+    Lambda1InvokeJob.addCatch(errorHandlingState);
+    lambda2MapIteratorInvoke.addCatch(errorHandlingState);
+    lambda3Invoke.addCatch(errorHandlingState);
 
     new StateMachine(this, "StateMachine", {
       stateMachineName: "krisun-state-machine",
