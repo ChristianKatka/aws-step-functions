@@ -1,19 +1,14 @@
 import { iamLambdaPermissions } from "./utils/iam-lambda-permissions.util";
-
-import { CfnOutput, Stack, StackProps } from "aws-cdk-lib";
+import { Stack, StackProps } from "aws-cdk-lib";
 import { Runtime } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import {
   DefinitionBody,
-  StateMachine,
   Map,
-  Fail,
-  Condition,
-  Choice,
+  StateMachine,
 } from "aws-cdk-lib/aws-stepfunctions";
 import { LambdaInvoke } from "aws-cdk-lib/aws-stepfunctions-tasks";
 import { Construct } from "constructs";
-import { machine } from "os";
 export class StepFunctionsStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
